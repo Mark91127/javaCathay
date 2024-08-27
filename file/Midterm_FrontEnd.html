@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<head>
+	<style>
+		table {
+			border-collapse: collapse;
+			margin: 10px auto;
+		}
+
+		td {
+			width: 120px;
+			height: 120px;
+			text-align: center;
+			font-size: 20px;
+			border: 1px solid #000;
+		}
+
+		button {
+			width: 100%;
+			height: 100%;
+			font-size: 25px;
+		}
+
+		.hidden {
+			background-color: gray;
+		}
+
+		.revealed {
+			background-color: white;
+			color: black;
+		}
+
+		.matched {
+			background-color: lightgreen;
+			font-weight: bold;
+			border: 2px solid green;
+		}
+
+		#btnSubmit {
+			width: 30%;
+			height: 50%;
+			font-size: 25px;
+			display: block;
+			margin: 20px auto
+		}
+
+		span {
+			display: block;
+			margin: 20px auto;
+			text-align: center;
+		}
+	</style>
+	<title>期中測驗</title>
+	<script type="text/javascript">
+
+		window.onload = function () {
+			// 共用API方法，請勿更動
+			var callApi = function callApi(url, param) {
+				return fetch(url, {
+					method: 'post',
+					body: JSON.stringify(param),
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				}).then(function (response) {
+					return response.json();
+				});
+			}
+			// button觸發查詢與在畫面顯示回傳值
+			document.getElementById('btnSubmit').addEventListener('click', function () {
+				// 請將查詢前要做的事情寫在下方
+				const tableBody = document.querySelector('tbody');
+				tableBody.textContent = '';
+
+				let matrixSize = parseInt(document.getElementById('name').value.trim());
+				if (isNaN(matrixSize) || matrixSize % 2 !== 0 || matrixSize < 2 || matrixSize > 6) {
+					alert('請輸入偶數且介於 2~6 之間')
+					return;
+				}
+
+				// 請把要送至後端查詢的資訊，包裝成物件
+				var param = {
+					/*, 範例程式：*/
+					matrixSize: matrixSize,
+
+				};
+
+				/* 呼叫callApi方法需傳入2個參數(1.各題後端API的URL, 2.包裝成物件的param)
+				範例程式：'http://localhost:8080/midterm/demoCode'
+				第一題_發撲克牌：'http://localhost:8080/midterm/deal'
+				第二題_證件號碼驗證：'http://localhost:8080/midterm/checkId'
+				第二題_證件號碼驗證_加分題：'http://localhost:8080/midterm/getRandomId'
+				第三題_Wordle：'http://localhost:8080/midterm/wordle'
+				第四題_對對碰：'http://localhost:8080/midterm/matchingGame'
+				第五題_捷運車資計算：'http://localhost:8080/midterm/metro'
+				*/
+				callApi('http://localhost:8080/midterm/matchingGame', param).then(function (response) {
+					/* API回傳的內容為後端組出的Map，例：
+					{"pokerA":[],"success":true,"returnMessage":"驗證成功","metro_fee":100}
+					
+					可透過response.[key]取值，例：response.returnMessage = '驗證成功'
+					*/
+					resetGame();
+					addRowToTable(response, matrixSize);
+				});
+			});
+		}
+
+		function addRowToTable(object, matrixSize) {
+			const tableBody = document.querySelector('tbody');
+			let newRow;
+
+			for (let i = 0; i < matrixSize * matrixSize; i++) {
+				if (i % matrixSize === 0) {
+					newRow = document.createElement('tr');
+				}
+				const cell = document.createElement('td');
+				const button = document.createElement('button');
+				button.classList.add('hidden');
+				button.textContent = '翻牌';
+				button.setAttribute('value', object[i]);
+				button.onclick = () => handleClick(button);
+				cell.appendChild(button);
+				newRow.appendChild(cell);
+				if (i % matrixSize === matrixSize - 1) {
+					tableBody.appendChild(newRow);
+				}
+			}
+		}
+		let firstCell = null;
+		let secondCell = null;
+		function handleClick(button) {
+			if (button.classList.contains('matched') || (firstCell === button) || (secondCell === button)) return;
+
+			button.textContent = button.getAttribute('value');
+			button.classList.remove('hidden');
+			button.classList.add('revealed');
+
+			if (!firstCell) {
+				firstCell = button;
+			} else if (!secondCell) {
+				disableAllButtons(true);
+				secondCell = button;
+
+				setTimeout(() => {
+					if (firstCell.getAttribute('value') === secondCell.getAttribute('value')) {
+						// 成功配對
+						firstCell.classList.add('matched');
+						secondCell.classList.add('matched');
+					} else {
+						// 配對失敗
+						firstCell.textContent = '翻牌';
+						secondCell.textContent = '翻牌';
+						firstCell.classList.add('hidden');
+						secondCell.classList.add('hidden');
+					}
+					firstCell = null;
+					secondCell = null;
+
+					disableAllButtons(false);
+				}, 1500);
+			}
+		}
+		function disableAllButtons(condition) {
+			const buttons = document.querySelectorAll('button');
+			buttons.forEach(button => button.disabled = condition);
+		}
+		function resetGame() {
+			firstCell = null;
+			secondCell = null;
+		}
+	</script>
+</head>
+
+<body>
+	<!--請將html程式碼寫在<body>中
+	按下「遊戲開始」按鈕觸發查詢-->
+	<span>請輸入偶數且介於 2~6 之間 <input type="text" id="name" name="name"></span>
+	<button type="button" id="btnSubmit">遊戲開始</button>
+	<table>
+		<tbody></tbody>
+	</table>
+</body>
+
+</html>
