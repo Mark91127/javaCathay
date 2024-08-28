@@ -37,7 +37,7 @@
 		}
 
 		#btnSubmit {
-			width: 30%;
+			width: 15%;
 			height: 50%;
 			font-size: 25px;
 			display: block;
@@ -147,6 +147,9 @@
 						// 成功配對
 						firstCell.classList.add('matched');
 						secondCell.classList.add('matched');
+						if(checkAllMatched()){
+							alert('配對完成!')
+						};
 					} else {
 						// 配對失敗
 						firstCell.textContent = '翻牌';
@@ -158,7 +161,7 @@
 					secondCell = null;
 
 					disableAllButtons(false);
-				}, 1500);
+				}, 1000);
 			}
 		}
 		function disableAllButtons(condition) {
@@ -169,6 +172,16 @@
 			firstCell = null;
 			secondCell = null;
 		}
+		function checkAllMatched() {
+			const buttons = document.querySelectorAll('button:not(#btnSubmit)');
+			for (let i = 0; i < buttons.length; i++) {
+				if (!buttons[i].classList.contains('matched')) {
+					return false; 
+				}
+			}
+			return true; 
+		}
+
 	</script>
 </head>
 
